@@ -1,25 +1,51 @@
 <?php
 
-namespace App\Jawaban;
+namespace App\Jawaban; // Namespace untuk mengorganisir kelas
 
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth; // Untuk autentikasi
+use Illuminate\Support\Facades\Validator; // Untuk validasi data
 
 class NomorSatu {
 
-	public function auth (Request $request) {
+    /**
+     * Metode untuk menangani proses autentikasi.
+     */
+    public function auth(Request $request) {
+        // Validasi input username dan password
+        $validator = Validator::make($request->all(), [
+            'username' => 'required|string', // Username harus diisi dan berupa string
+            'password' => 'required|string|min:8', // Password harus diisi, berupa string, dan minimal 8 karakter
+        ]);
 
-		// Tuliskan code untuk proses login dengan menggunakan email/username dan password
+        // Jika validasi gagal, kembalikan ke halaman sebelumnya dengan pesan error
+        if ($validator->fails()) {
+            return redirect()->back()
+                ->withErrors($validator)
+                ->withInput();
+        }
 
-		return redirect()->route('event.home');
-	}
+        // Cek apakah input username adalah email atau username biasa
+        $field = filter_var($request->username, FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
 
-	public function logout (Request $request) {
+        // Coba melakukan autentikasi
+        if (Auth::attempt([$field => $request->username, 'password' => $request->password])) {
+            return redirect()->route('event.home'); // Jika berhasil, redirect ke halaman home
+        } else {
+            return redirect()->back()
+                ->with('error', 'Email/Username atau password salah.') // Jika gagal, kembalikan pesan error
+                ->withInput();
+        }
+    }
 
-		// Tuliskan code untuk menangani proses logout
-        
-        return redirect()->route('event.home');
-	}
+    /**
+     * Metode untuk menangani proses logout.
+     */
+    public function logout(Request $request) {
+        Auth::logout(); // Logout pengguna
+        $request->session()->invalidate(); // Invalidasi session
+        $request->session()->regenerateToken(); // Regenerasi token CSRF
+
+        return redirect()->route('event.home'); // Redirect ke halaman home setelah logout
+    }
 }
-
-?>

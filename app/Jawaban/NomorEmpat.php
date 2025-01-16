@@ -8,13 +8,26 @@ use App\Models\Event;
 
 class NomorEmpat {
 
-	public function getJson () {
+    public function getJson()
+    {
+        $userId = Auth::id();
+        
+        $events = Event::all();  
+        
+        $formattedEvents = $events->map(function ($event) use ($userId) {
+            return [
+                'id' => $event->id,
+                'title' => $event->name . ' - ' . $event->user->name,
+                'start' => $event->start->toIso8601String(),  
+                'end' => $event->end ? $event->end->toIso8601String() : null,  
+                'color' => ($event->user_id == $userId) ? 'primary' : 'gray',  
+            ];
+        });
 
-		// Tuliskan code untuk mengambil semua jadwal, simpan di variabel $data
-		$data = [];
+        return response()->json($formattedEvents);
+    }
 
-		return response()->json($data);
-	}
+
 }
 
 ?>
